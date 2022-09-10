@@ -1,0 +1,17 @@
+name = "import_style_guide"
+description = "Scripts to fetch Ada Quality and Style Guide wikibook "
+version = "0.1.0-dev"
+
+authors = ["Max Reznik"]
+maintainers = ["Max Reznik <reznikmm@gmail.com>"]
+maintainers-logins = ["reznikmm"]
+
+executables = ["aqs2mdx"]
+project-files = ["gnat/aqs2mdx.gpr"]
+
+configuration.output_dir = "gnat"
+configuration.generate_ada = false
+configuration.generate_c = false
+
+[[depends-on]]
+matreshka_league = "*"
