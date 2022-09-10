@@ -37,7 +37,6 @@ title: Ada Quality and Style Guide
 description: Guidelines for Professional Programmers
 sidebar_position: 1
 draft: true
-slug: /style-guide
 ---
 
 > __*Guidelines for Professional Programmers*__
