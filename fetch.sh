@@ -9,7 +9,7 @@ mkdir -p $OUTPUT
 curl -o data/Ada_Style_Guide.wiki "https://en.wikibooks.org/w/index.php?title=Ada_Style_Guide&action=raw"
 
 CHAPTERS=`grep -F '* [[' data/Ada_Style_Guide.wiki | sed -e 's#.*/\([^|]*\)|.*#\1#' -e 's/ /_/g'`
-INDEX=2
+INDEX=1
 for J in $CHAPTERS; do
     curl -o data/$J.wiki "https://en.wikibooks.org/w/index.php?title=Ada_Style_Guide/$J&action=raw"
     #  Suppress quote format to replace it latter
@@ -26,7 +26,7 @@ sidebar_position: $INDEX
 ---
 
 EOF
-    cat /tmp/front_matter /tmp/mdx > $OUTPUT/$J.mdx
+    cat /tmp/front_matter note.mdx /tmp/mdx > $OUTPUT/$J.mdx
     INDEX=$((INDEX+1))
 done
 
@@ -35,7 +35,7 @@ cat > /tmp/front_matter <<-EOF
 ---
 title: Ada Quality and Style Guide
 description: Guidelines for Professional Programmers
-sidebar_position: 1
+sidebar_position: 0
 draft: true
 ---
 
@@ -46,4 +46,4 @@ EOF
 sed -e '/<noinclude>/,/<.noinclude>/d' data/Ada_Style_Guide.wiki |
     pandoc -f mediawiki -t gfm --filter ./bin/aqs2mdx  > /tmp/mdx
 
-cat /tmp/front_matter /tmp/mdx > $OUTPUT/Ada_Style_Guide.mdx
+cat /tmp/front_matter note.mdx /tmp/mdx > $OUTPUT/Ada_Style_Guide.mdx
