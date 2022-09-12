@@ -26,7 +26,7 @@ sidebar_position: $INDEX
 ---
 
 EOF
-    cat /tmp/front_matter note.mdx /tmp/mdx > $OUTPUT/$J.mdx
+    cat /tmp/front_matter /tmp/mdx note.mdx > $OUTPUT/$J.mdx
     INDEX=$((INDEX+1))
 done
 
@@ -46,4 +46,4 @@ EOF
 sed -e '/<noinclude>/,/<.noinclude>/d' data/Ada_Style_Guide.wiki |
     pandoc -f mediawiki -t gfm --filter ./bin/aqs2mdx  > /tmp/mdx
 
-cat /tmp/front_matter note.mdx /tmp/mdx > $OUTPUT/Ada_Style_Guide.mdx
+cat /tmp/front_matter /tmp/mdx note.mdx > $OUTPUT/Ada_Style_Guide.mdx
