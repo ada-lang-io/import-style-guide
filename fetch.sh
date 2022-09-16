@@ -36,7 +36,6 @@ cat > /tmp/front_matter <<-EOF
 title: Ada Quality and Style Guide
 description: Guidelines for Professional Programmers
 sidebar_position: 0
-draft: true
 ---
 
 > __*Guidelines for Professional Programmers*__
