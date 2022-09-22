@@ -12,6 +12,9 @@ Then run:
 
     ./fetch.sh <OUTPUT_DIR>
 
+Then run `yarn format` in ada-lang.io repository to reformat output according
+to Docusaurus style.
+
 ## To be fixed
 
 * Arrange code blocks in Source Code Presentation in two columns
