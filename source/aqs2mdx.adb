@@ -20,8 +20,20 @@ procedure Aqs2mdx is
    function Traverse (Blocks : League.JSON.Arrays.JSON_Array)
      return League.JSON.Arrays.JSON_Array;
 
+   function Traverse_List (List : League.JSON.Arrays.JSON_Array)
+     return League.JSON.Arrays.JSON_Array;
+
    function Traverse_Block (Block : League.JSON.Objects.JSON_Object)
      return League.JSON.Arrays.JSON_Array;
+
+   function Traverse_Link (Block : League.JSON.Objects.JSON_Object)
+     return League.JSON.Values.JSON_Value;
+
+   Wiki : constant League.Strings.Universal_String :=
+     +"https://en.wikipedia.org/wiki/";
+
+   Wikibook : constant League.Strings.Universal_String :=
+     +"https://en.wikibooks.org/wiki/";
 
    ---------------
    -- Read_JSON --
@@ -60,6 +72,7 @@ procedure Aqs2mdx is
          declare
             Block : constant League.JSON.Objects.JSON_Object :=
                Blocks (J).To_Object;
+
             Result : constant League.JSON.Arrays.JSON_Array :=
                Traverse_Block (Block);
          begin
@@ -87,8 +100,10 @@ procedure Aqs2mdx is
          declare
             Content : constant League.JSON.Arrays.JSON_Array :=
               Block (+"c").To_Array;
-            Rows : constant League.JSON.Arrays.JSON_Array :=
+
+            Rows    : constant League.JSON.Arrays.JSON_Array :=
               Content (5).To_Array;
+
             Columns : constant League.JSON.Arrays.JSON_Array :=
               Rows (1).To_Array;
          begin
@@ -117,12 +132,94 @@ procedure Aqs2mdx is
       then
          --  Drop toppest 'Introduction' section header
          null;
-      else
+
+      elsif Block (+"t").To_String.To_Wide_Wide_String = "Link" then
+         List.Append (Traverse_Link (Block));
+
+      elsif Block (+"c").To_Array.Length > 0 then
+         declare
+            --  Traverse nested blocks
+            Copy : League.JSON.Objects.JSON_Object := Block;
+         begin
+            Copy.Insert
+              (+"c", Traverse_List (Block (+"c").To_Array).To_JSON_Value);
+
+            List.Append (Copy.To_JSON_Value);
+         end;
+
+      else  --  Something else (if any?)
          List.Append (Block.To_JSON_Value);
       end if;
 
       return List;
    end Traverse_Block;
+
+   -------------------
+   -- Traverse_Link --
+   -------------------
+
+   function Traverse_Link (Block : League.JSON.Objects.JSON_Object)
+     return League.JSON.Values.JSON_Value
+   is
+      Copy : League.JSON.Objects.JSON_Object := Block;
+      Args : League.JSON.Arrays.JSON_Array := Copy (+"c").To_Array;
+      Fix  : League.JSON.Arrays.JSON_Array := Args (3).To_Array;
+      Link : League.Strings.Universal_String := Fix (1).To_String;
+   begin
+      if Fix (2).To_String.To_Wide_Wide_String = "wikilink" then
+         if Link.Starts_With ("w:") then
+            Link := Wiki & Link.Tail_From (3);
+         else
+            Link := Wikibook & Link;
+         end if;
+
+         Fix.Replace (1, League.JSON.Values.To_JSON_Value (Link));
+         Fix.Replace (2, League.JSON.Values.To_JSON_Value (+""));
+         Args.Replace (3, Fix.To_JSON_Value);
+         Copy.Insert (+"c", Args.To_JSON_Value);
+      end if;
+
+      return Copy.To_JSON_Value;
+   end Traverse_Link;
+
+   -------------------
+   -- Traverse_List --
+   -------------------
+
+   function Traverse_List (List : League.JSON.Arrays.JSON_Array)
+     return League.JSON.Arrays.JSON_Array
+   is
+      Result : League.JSON.Arrays.JSON_Array;
+   begin
+      for J in 1 .. List.Length loop
+         declare
+            Item : constant League.JSON.Values.JSON_Value := List (J);
+         begin
+            if Item.Is_Object then
+               declare
+                  Block : constant League.JSON.Objects.JSON_Object :=
+                    Item.To_Object;
+
+                  Blocks : constant League.JSON.Arrays.JSON_Array :=
+                    Traverse_Block (Block);
+               begin
+                  for K in 1 .. Blocks.Length loop
+                     Result.Append (Blocks (K));
+                  end loop;
+               end;
+
+            elsif Item.Is_Array then
+               Result.Append (Traverse_List (Item.To_Array).To_JSON_Value);
+
+            else
+               Result.Append (Item);
+
+            end if;
+         end;
+      end loop;
+
+      return Result;
+   end Traverse_List;
 
    Doc  : League.JSON.Documents.JSON_Document;
 
