@@ -25,6 +25,8 @@ title: ${J//_/ }
 sidebar_position: $INDEX
 ---
 
+_[\[edit in Wikibooks\]](https://en.wikibooks.org/w/index.php?title=Ada_Style_Guide/$J&veaction=edit)_
+
 EOF
     cat /tmp/front_matter /tmp/mdx note.mdx > $OUTPUT/$J.mdx
     INDEX=$((INDEX+1))
