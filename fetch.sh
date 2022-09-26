@@ -38,7 +38,7 @@ description: Guidelines for Professional Programmers
 sidebar_position: 0
 ---
 
-> __*Guidelines for Professional Programmers*__
+> **_Guidelines for Professional Programmers_**
 
 EOF
 
