@@ -98,6 +98,13 @@ procedure Aqs2mdx is
          --  Flatting tables because no multiline tables in .md
 
          declare
+            --  Table structure in pandoc-types-1.20. See
+            --  https://hackage.haskell.org/package/pandoc-types-1.20/docs/
+            --  Text-Pandoc-Definition.html
+            --
+            --        1        2           3        4           5
+            --  Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]
+
             Content : constant League.JSON.Arrays.JSON_Array :=
               Block (+"c").To_Array;
 
