@@ -98,35 +98,62 @@ procedure Aqs2mdx is
          --  Flatting tables because no multiline tables in .md
 
          declare
-            --  Table structure in pandoc-types-1.20. See
-            --  https://hackage.haskell.org/package/pandoc-types-1.20/docs/
+            --  Table structure in pandoc-types-1.23.1. See
+            --  https://hackage.haskell.org/package/pandoc-types-1.23.1/docs/
             --  Text-Pandoc-Definition.html
             --
-            --        1        2           3        4           5
-            --  Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]
+            --  Table:
+            --  Attr Caption [ColSpec] TableHead [TableBody] TableFoot
+            --  1    2       3         4         5           6
 
             Content : constant League.JSON.Arrays.JSON_Array :=
               Block (+"c").To_Array;
 
-            Rows    : constant League.JSON.Arrays.JSON_Array :=
+            Table_Body_List : constant League.JSON.Arrays.JSON_Array :=
               Content (5).To_Array;
+            --  A body of a table, with an intermediate head, intermediate
+            --  body, and the specified number of row header columns in the
+            --  intermediate body.
+            --
+            --  TableBody Attr RowHeadColumns [Row] [Row]
+            --            1    2              3     4
 
-            Columns : constant League.JSON.Arrays.JSON_Array :=
-              Rows (1).To_Array;
+            Table_Body : constant League.JSON.Arrays.JSON_Array :=
+              Table_Body_List (1).To_Array;
+
+            Row_List : constant League.JSON.Arrays.JSON_Array :=
+              Table_Body (4).To_Array;
+
+            Row : constant League.JSON.Arrays.JSON_Array :=
+              Row_List (1).To_Array;
+            --  A table row.
+            --  Row Attr [Cell]
+            --      1    2
+
+            Cell_List : constant League.JSON.Arrays.JSON_Array :=
+              Row (2).To_Array;
+
          begin
-            pragma Assert (Content.Length = 5);
-            pragma Assert (Rows.Length = 1);
-            pragma Assert (Columns.Length <= 3);
+            pragma Assert (Content.Length = 6);
+            pragma Assert (Table_Body_List.Length = 1);
+            pragma Assert (Row_List.Length = 1);
+            pragma Assert (Cell_List.Length <= 3);
 
-            for J in 1 .. Columns.Length loop
+            for J in 1 .. Cell_List.Length loop
                declare
-                  Item : constant League.JSON.Arrays.JSON_Array :=
-                     Columns (J).To_Array;
-               begin
-                  pragma Assert (Item.Length <= 1);
+                  Cell : constant League.JSON.Arrays.JSON_Array :=
+                     Cell_List (J).To_Array;
+                  --  A table cell.
+                  --  Cell Attr Alignment RowSpan ColSpan [Block]
+                  --       1    2         3       4       5
 
-                  for K in 1 .. Item.Length loop
-                     List.Append (Item (K));
+                  Block_List : constant League.JSON.Arrays.JSON_Array :=
+                    Cell (5).To_Array;
+               begin
+                  pragma Assert (Cell.Length = 5);
+
+                  for K in 1 .. Block_List.Length loop
+                     List.Append (Block_List (K));
                   end loop;
                end;
             end loop;

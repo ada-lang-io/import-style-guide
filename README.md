@@ -4,7 +4,7 @@ These scripts convert the WiKi book to ada-lang.io markdown.
 
 ## Requirements
 
-You need `pandoc-2.9.2.1`, `curl`, `sed` installed.
+You need `pandoc-3.1.3`, `curl`, `sed` installed.
 
 ## Build and run
 
