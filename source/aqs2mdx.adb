@@ -165,7 +165,7 @@ procedure Aqs2mdx is
             end;
          when Block_Header =>
             if Block (Pandoc.Content_String).To_Array.Element (1)
-              .To_Integer = 2
+                .To_Integer = 2
               and then Block (Pandoc.Content_String).To_Array.Element (2)
                 .To_Array.Element (1).To_String = +"introduction"
               --  This relies on the fact that Pandoc converts a title
