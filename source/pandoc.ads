@@ -1,12 +1,15 @@
 with Ada.Containers;
 with Ada.Containers.Hashed_Maps;
-with League.Strings;
-with League.JSON;
 with League.JSON.Objects;
+with League.Strings;
 
 package Pandoc is
 
+   Pandoc_Type_Error : exception;
+
    package Ustr renames League.Strings;
+
+   type Ustr_Array is array (Natural range <>) of Ustr.Universal_String;
 
    type Object_Type is (
      Block_Plain,
@@ -56,6 +59,9 @@ package Pandoc is
 
 private
 
+   function Hash (Item : Ustr.Universal_String)
+     return Ada.Containers.Hash_Type;
+
    Obj_String_Representation :
      constant array (Object_Type) of Ustr.Universal_String := (
       +"Plain",
@@ -93,9 +99,6 @@ private
       +"Note",
       +"Span"
     );
-
-   function Hash (Item : Ustr.Universal_String)
-     return Ada.Containers.Hash_Type;
 
    package Type_Map is new Ada.Containers.Hashed_Maps (
      Key_Type => Ustr.Universal_String,
