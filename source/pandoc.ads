@@ -81,7 +81,7 @@ private
      return Ada.Containers.Hash_Type;
 
    Obj_String_Representation :
-     constant array (Object_Type) of Ustr.Universal_String := [
+     constant array (Object_Type) of Ustr.Universal_String := (
       +"Plain",
       +"Para",
       +"LineBlock",
@@ -116,7 +116,7 @@ private
       +"Image",
       +"Note",
       +"Span"
-   ];
+   );
 
    package Type_Map is new Ada.Containers.Hashed_Maps (
      Key_Type => Ustr.Universal_String,

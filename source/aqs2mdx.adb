@@ -104,7 +104,8 @@ procedure Aqs2mdx is
             --  in .md
             declare
                --  Table structure in pandoc-types-1.23.1. See
-               --  https://hackage.haskell.org/package/pandoc-types-1.23.1/docs/
+               --  https://hackage.haskell.org/package/pandoc-types-1.23.1/
+               --  docs/
                --  Text-Pandoc-Definition.html
                --
                --  Table:
@@ -138,6 +139,16 @@ procedure Aqs2mdx is
                Cell_List : constant League.JSON.Arrays.JSON_Array :=
                  Row (2).To_Array;
 
+               Columns_Div : Pandoc.Content_Arr (1 .. Cell_List.Length);
+
+               Outer_Attr : constant League.JSON.Values.JSON_Value :=
+                 Pandoc.Attr (
+                    +"", ( 1 => +"className"), ( 1 => +"multi-column"));
+
+               Inner_Attr : constant League.JSON.Values.JSON_Value :=
+                 Pandoc.Attr (
+                    +"", ( 1 => +"className"), ( 1 => +"multi-column-child"));
+
             begin
                pragma Assert (Content.Length = 6);
                pragma Assert (Table_Body_List.Length = 1);
@@ -152,16 +163,17 @@ procedure Aqs2mdx is
                      Cell : constant League.JSON.Arrays.JSON_Array :=
                        Cell_List (J).To_Array;
 
-                     Block_List : constant League.JSON.Arrays.JSON_Array :=
-                       Cell (5).To_Array;
+                     Block_List : constant League.JSON.Values.JSON_Value :=
+                       Cell (5);
+
                   begin
                      pragma Assert (Cell.Length = 5);
 
-                     for K in 1 .. Block_List.Length loop
-                        List.Append (Block_List (K));
-                     end loop;
+                     Columns_Div (J) := Pandoc.Div (Inner_Attr, Block_List);
                   end;
                end loop;
+
+               List.Append (Pandoc.Div (Outer_Attr, Columns_Div));
             end;
          when Block_Header =>
             if Block (Pandoc.Content_String).To_Array.Element (1)
