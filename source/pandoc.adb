@@ -1,11 +1,21 @@
+pragma Ada_2022;
+
 with League.JSON.Arrays;
 
 package body Pandoc is
 
-   function Attr (
-      Id : Ustr.Universal_String;
-      Key : Ustr_Array;
-      Value : Ustr_Array) return League.JSON.Values.JSON_Value
+   function Attr
+     (Key   : League.Strings.Universal_String;
+      Value : League.Strings.Universal_String;
+      Id    : League.Strings.Universal_String :=
+        League.Strings.Empty_Universal_String)
+          return League.JSON.Values.JSON_Value is
+           (Attr (Id, [Key], [Value]));
+
+   function Attr
+     (Id    : League.Strings.Universal_String;
+      Key   : String_Array;
+      Value : String_Array) return League.JSON.Values.JSON_Value
    is
       Outer : League.JSON.Arrays.JSON_Array;
       Other : League.JSON.Arrays.JSON_Array;
@@ -59,8 +69,8 @@ package body Pandoc is
       return Block.To_JSON_Value;
    end Div;
 
-   function Div (
-      Attr : League.JSON.Values.JSON_Value;
+   function Div
+     (Attr    : League.JSON.Values.JSON_Value;
       Content : League.JSON.Values.JSON_Value)
       return League.JSON.Values.JSON_Value
    is
@@ -86,26 +96,13 @@ package body Pandoc is
    end Div;
 
    function Get_Type (B : League.JSON.Objects.JSON_Object)
-     return Object_Type is
-   begin
-      return Type_Map.Element (
-        Type_Mapping.Find (
-          B (Type_String).To_String
-        )
-      );
-   end Get_Type;
-
-   function Hash (Item : Ustr.Universal_String)
-     return Ada.Containers.Hash_Type is
-   begin
-      return Ada.Containers.Hash_Type (League.Hash_Type'(Item.Hash));
-   end Hash;
+     return Object_Type is (Type_Mapping (B (Type_String).To_String));
 
 begin
 
    for Key in Object_Type loop
       declare
-         Str_Rep : constant Ustr.Universal_String :=
+         Str_Rep : constant League.Strings.Universal_String :=
            Obj_String_Representation (Key);
       begin
          Type_Mapping.Insert (Str_Rep, Key);

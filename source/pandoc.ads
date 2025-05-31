@@ -1,87 +1,87 @@
 with Ada.Containers;
 with Ada.Containers.Hashed_Maps;
 with League.JSON.Objects;
+with League.Strings.Hash;
 with League.Strings;
 with League.JSON.Values;
 
 package Pandoc is
 
-   Pandoc_Type_Error : exception;
+   type String_Array is array (Natural range <>) of
+     League.Strings.Universal_String;
 
-   package Ustr renames League.Strings;
-
-   type Ustr_Array is array (Natural range <>) of Ustr.Universal_String;
-
-   type Object_Type is (
-     Block_Plain,
-     Block_Para,
-     Block_LineBlock,
-     Block_CodeBlock,
-     Block_RawBlock,
-     Block_BlockQuote,
-     Block_OrderedList,
-     Block_BulletList,
-     Block_DefinitionList,
-     Block_Header,
-     Block_HorizontalRule,
-     Block_Table,
-     Block_Figure,
-     Block_Div,
-     Inline_String,
-     Inline_Emph,
-     Inline_Underline,
-     Inline_Strong,
-     Inline_Strikeout,
-     Inline_Superscript,
-     Inline_Subscript,
-     Inline_SmallCaps,
-     Inline_Quoted,
-     Inline_Cite,
-     Inline_Code,
-     Inline_Space,
-     Inline_SoftBreak,
-     Inline_LineBreak,
-     Inline_Math,
-     Inline_RawInline,
-     Inline_Link,
-     Inline_Image,
-     Inline_Note,
-     Inline_Span
-    );
+   type Object_Type is
+     (Block_Plain,
+      Block_Para,
+      Block_LineBlock,
+      Block_CodeBlock,
+      Block_RawBlock,
+      Block_BlockQuote,
+      Block_OrderedList,
+      Block_BulletList,
+      Block_DefinitionList,
+      Block_Header,
+      Block_HorizontalRule,
+      Block_Table,
+      Block_Figure,
+      Block_Div,
+      Inline_String,
+      Inline_Emph,
+      Inline_Underline,
+      Inline_Strong,
+      Inline_Strikeout,
+      Inline_Superscript,
+      Inline_Subscript,
+      Inline_SmallCaps,
+      Inline_Quoted,
+      Inline_Cite,
+      Inline_Code,
+      Inline_Space,
+      Inline_SoftBreak,
+      Inline_LineBreak,
+      Inline_Math,
+      Inline_RawInline,
+      Inline_Link,
+      Inline_Image,
+      Inline_Note,
+      Inline_Span);
 
    type Content_Arr is array (Natural range <>)
      of League.JSON.Values.JSON_Value;
 
-   function Get_Type (
-     B : League.JSON.Objects.JSON_Object) return Object_Type;
+   function Get_Type (B : League.JSON.Objects.JSON_Object) return Object_Type;
 
-   function "+" (T : Wide_Wide_String) return Ustr.Universal_String
-     renames Ustr.To_Universal_String;
+   function "+" (T : Wide_Wide_String) return League.Strings.Universal_String
+     renames League.Strings.To_Universal_String;
 
-   function Attr (
-      Id : Ustr.Universal_String;
-      Key : Ustr_Array;
-      Value : Ustr_Array) return League.JSON.Values.JSON_Value;
+   function Attr
+     (Key   : League.Strings.Universal_String;
+      Value : League.Strings.Universal_String;
+      Id    : League.Strings.Universal_String :=
+        League.Strings.Empty_Universal_String)
+          return League.JSON.Values.JSON_Value;
 
-   function Div (
-      Attr : League.JSON.Values.JSON_Value;
+   function Attr
+     (Id    : League.Strings.Universal_String;
+      Key   : String_Array;
+      Value : String_Array) return League.JSON.Values.JSON_Value;
+
+   function Div
+     (Attr : League.JSON.Values.JSON_Value;
       Content : Content_Arr) return League.JSON.Values.JSON_Value;
 
-   function Div (
-      Attr : League.JSON.Values.JSON_Value;
+   function Div
+     (Attr : League.JSON.Values.JSON_Value;
       Content : League.JSON.Values.JSON_Value)
-      return League.JSON.Values.JSON_Value;
+        return League.JSON.Values.JSON_Value;
 
-   Type_String : constant Ustr.Universal_String := +"t";
-   Content_String : constant Ustr.Universal_String := +"c";
+   Type_String : constant League.Strings.Universal_String := +"t";
+   Content_String : constant League.Strings.Universal_String := +"c";
 
 private
 
-   function Hash (Item : Ustr.Universal_String)
-     return Ada.Containers.Hash_Type;
-
    Obj_String_Representation :
-     constant array (Object_Type) of Ustr.Universal_String := (
+     constant array (Object_Type) of League.Strings.Universal_String := (
       +"Plain",
       +"Para",
       +"LineBlock",
@@ -119,10 +119,10 @@ private
    );
 
    package Type_Map is new Ada.Containers.Hashed_Maps (
-     Key_Type => Ustr.Universal_String,
+     Key_Type => League.Strings.Universal_String,
      Element_Type => Object_Type,
-     Hash => Hash,
-     Equivalent_Keys => Ustr."=");
+     Hash => League.Strings.Hash,
+     Equivalent_Keys => League.Strings."=");
 
    Type_Mapping : Type_Map.Map := Type_Map.Empty;
 

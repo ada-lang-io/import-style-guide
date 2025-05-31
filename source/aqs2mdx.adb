@@ -142,12 +142,10 @@ procedure Aqs2mdx is
                Columns_Div : Pandoc.Content_Arr (1 .. Cell_List.Length);
 
                Outer_Attr : constant League.JSON.Values.JSON_Value :=
-                 Pandoc.Attr (
-                    +"", ( 1 => +"className"), ( 1 => +"multi-column"));
+                 Pandoc.Attr (+"className", +"multi-column");
 
                Inner_Attr : constant League.JSON.Values.JSON_Value :=
-                 Pandoc.Attr (
-                    +"", ( 1 => +"className"), ( 1 => +"multi-column-child"));
+                 Pandoc.Attr (+"className", +"multi-column-child");
 
             begin
                pragma Assert (Content.Length = 6);
