@@ -7,9 +7,12 @@ with League.JSON.Objects;
 with League.JSON.Values;
 with League.Strings;
 
+with Pandoc;
+
 procedure Aqs2mdx is
    use type League.Strings.Universal_String;
    use type League.Holders.Universal_Integer;
+   use all type Pandoc.Object_Type;
 
    function "+" (T : Wide_Wide_String) return League.Strings.Universal_String
       renames League.Strings.To_Universal_String;
@@ -93,97 +96,117 @@ procedure Aqs2mdx is
      return League.JSON.Arrays.JSON_Array
    is
       List : League.JSON.Arrays.JSON_Array;
+      Pandoc_Type : constant Pandoc.Object_Type := Pandoc.Get_Type (Block);
    begin
-      if Block (+"t").To_String.To_Wide_Wide_String = "Table" then
-         --  Flatting tables because no multiline tables in .md
+      case Pandoc_Type is
+         when Block_Table =>
+            --  Flatten tables since there are no native multiline tables
+            --  in .md
+            declare
+               --  Table structure in pandoc-types-1.23.1. See
+               --  https://hackage.haskell.org/package/pandoc-types-1.23.1/
+               --  docs/
+               --  Text-Pandoc-Definition.html
+               --
+               --  Table:
+               --  Attr Caption [ColSpec] TableHead [TableBody] TableFoot
+               --  1    2       3         4         5           6
 
-         declare
-            --  Table structure in pandoc-types-1.23.1. See
-            --  https://hackage.haskell.org/package/pandoc-types-1.23.1/docs/
-            --  Text-Pandoc-Definition.html
-            --
-            --  Table:
-            --  Attr Caption [ColSpec] TableHead [TableBody] TableFoot
-            --  1    2       3         4         5           6
+               Content : constant League.JSON.Arrays.JSON_Array :=
+                 Block (Pandoc.Content_String).To_Array;
 
-            Content : constant League.JSON.Arrays.JSON_Array :=
-              Block (+"c").To_Array;
+               Table_Body_List : constant League.JSON.Arrays.JSON_Array :=
+                 Content (5).To_Array;
 
-            Table_Body_List : constant League.JSON.Arrays.JSON_Array :=
-              Content (5).To_Array;
-            --  A body of a table, with an intermediate head, intermediate
-            --  body, and the specified number of row header columns in the
-            --  intermediate body.
-            --
-            --  TableBody Attr RowHeadColumns [Row] [Row]
-            --            1    2              3     4
+               --  A body of a table, with an intermediate head, intermediate
+               --  body, and the specified number of row header columns in the
+               --  intermediate body.
+               --
+               --  TableBody Attr RowHeadColumns [Row] [Row]
+               --            1    2              3     4
+               Table_Body : constant League.JSON.Arrays.JSON_Array :=
+                 Table_Body_List (1).To_Array;
 
-            Table_Body : constant League.JSON.Arrays.JSON_Array :=
-              Table_Body_List (1).To_Array;
+               Row_List : constant League.JSON.Arrays.JSON_Array :=
+                 Table_Body (4).To_Array;
 
-            Row_List : constant League.JSON.Arrays.JSON_Array :=
-              Table_Body (4).To_Array;
+               --  A table row.
+               --  Row Attr [Cell]
+               --      1    2
+               Row : constant League.JSON.Arrays.JSON_Array :=
+                 Row_List (1).To_Array;
 
-            Row : constant League.JSON.Arrays.JSON_Array :=
-              Row_List (1).To_Array;
-            --  A table row.
-            --  Row Attr [Cell]
-            --      1    2
+               Cell_List : constant League.JSON.Arrays.JSON_Array :=
+                 Row (2).To_Array;
 
-            Cell_List : constant League.JSON.Arrays.JSON_Array :=
-              Row (2).To_Array;
+               Columns_Div : Pandoc.Content_Arr (1 .. Cell_List.Length);
 
-         begin
-            pragma Assert (Content.Length = 6);
-            pragma Assert (Table_Body_List.Length = 1);
-            pragma Assert (Row_List.Length = 1);
-            pragma Assert (Cell_List.Length <= 3);
+               Outer_Attr : constant League.JSON.Values.JSON_Value :=
+                 Pandoc.Attr (
+                    +"", ( 1 => +"className"), ( 1 => +"multi-column"));
 
-            for J in 1 .. Cell_List.Length loop
+               Inner_Attr : constant League.JSON.Values.JSON_Value :=
+                 Pandoc.Attr (
+                    +"", ( 1 => +"className"), ( 1 => +"multi-column-child"));
+
+            begin
+               pragma Assert (Content.Length = 6);
+               pragma Assert (Table_Body_List.Length = 1);
+               pragma Assert (Row_List.Length = 1);
+               pragma Assert (Cell_List.Length <= 3);
+
+               for J in 1 .. Cell_List.Length loop
+                  declare
+                     --  A table cell.
+                     --  Cell Attr Alignment RowSpan ColSpan [Block]
+                     --       1    2         3       4       5
+                     Cell : constant League.JSON.Arrays.JSON_Array :=
+                       Cell_List (J).To_Array;
+
+                     Block_List : constant League.JSON.Values.JSON_Value :=
+                       Cell (5);
+
+                  begin
+                     pragma Assert (Cell.Length = 5);
+
+                     Columns_Div (J) := Pandoc.Div (Inner_Attr, Block_List);
+                  end;
+               end loop;
+
+               List.Append (Pandoc.Div (Outer_Attr, Columns_Div));
+            end;
+         when Block_Header =>
+            if Block (Pandoc.Content_String).To_Array.Element (1)
+                .To_Integer = 2
+              and then Block (Pandoc.Content_String).To_Array.Element (2)
+                .To_Array.Element (1).To_String = +"introduction"
+              --  This relies on the fact that Pandoc converts a title
+              --  From mediawiki and adds a lower-case id to the header
+            then
+               --  Drop toplevel 'Introduction' section header
+               null;
+            else
+               List.Append (Block.To_JSON_Value);
+            end if;
+         when Inline_Link =>
+            List.Append (Traverse_Link (Block));
+         when others =>
+            if Block (Pandoc.Content_String).To_Array.Length > 0 then
                declare
-                  Cell : constant League.JSON.Arrays.JSON_Array :=
-                     Cell_List (J).To_Array;
-                  --  A table cell.
-                  --  Cell Attr Alignment RowSpan ColSpan [Block]
-                  --       1    2         3       4       5
-
-                  Block_List : constant League.JSON.Arrays.JSON_Array :=
-                    Cell (5).To_Array;
+                  --  Traverse nested blocks
+                  Copy : League.JSON.Objects.JSON_Object := Block;
+                  Arr : constant League.JSON.Arrays.JSON_Array :=
+                    Block (Pandoc.Content_String).To_Array;
                begin
-                  pragma Assert (Cell.Length = 5);
-
-                  for K in 1 .. Block_List.Length loop
-                     List.Append (Block_List (K));
-                  end loop;
+                  Copy.Insert (
+                     Pandoc.Content_String,
+                     Traverse_List (Arr).To_JSON_Value);
+                  List.Append (Copy.To_JSON_Value);
                end;
-            end loop;
-         end;
-
-      elsif Block (+"t").To_String.To_Wide_Wide_String = "Header"
-        and then Block (+"c").To_Array.Element (1).To_Integer = 2
-        and then Block (+"c").To_Array.Element (2)
-          .To_Array.Element (1).To_String = +"introduction"
-      then
-         --  Drop toppest 'Introduction' section header
-         null;
-
-      elsif Block (+"t").To_String.To_Wide_Wide_String = "Link" then
-         List.Append (Traverse_Link (Block));
-
-      elsif Block (+"c").To_Array.Length > 0 then
-         declare
-            --  Traverse nested blocks
-            Copy : League.JSON.Objects.JSON_Object := Block;
-         begin
-            Copy.Insert
-              (+"c", Traverse_List (Block (+"c").To_Array).To_JSON_Value);
-
-            List.Append (Copy.To_JSON_Value);
-         end;
-
-      else  --  Something else (if any?)
-         List.Append (Block.To_JSON_Value);
-      end if;
+            else
+               List.Append (Block.To_JSON_Value);
+            end if;
+      end case;
 
       return List;
    end Traverse_Block;
