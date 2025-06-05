@@ -209,6 +209,41 @@ procedure Aqs2mdx is
       return List;
    end Traverse_Block;
 
+   function Fix_Wikilink (Target : League.Strings.Universal_String) return League.Strings.Universal_String is
+   begin
+      if Target.Starts_With ("w:") then
+         return Wiki & Target.Tail_From (3);
+      else
+         return Wikibook & Target;
+      end if;
+   end Fix_Wikilink;
+
+   function Is_Direct_URL ( Link_Content : League.JSON.Arrays.JSON_Array ) return Boolean is
+      Alt_List : League.JSON.Arrays.JSON_Array := Link_Content (2).To_Array;
+      Target_Tuple : League.JSON.Arrays.JSON_Array := Link_Content (3).To_Array;
+      Target : League.Strings.Universal_String := Target_Tuple (1).To_String;
+   begin
+      if Alt_List.Length /= 1 then
+         return False;
+      else
+         declare
+            Alt_Text_Object : League.JSON.Objects.JSON_Object := Alt_List (1).To_Object;
+            Alt_Text : League.Strings.Universal_String := Alt_Text_Object(Pandoc.Content_String).To_String;
+         begin
+            return Alt_Text = Target;
+         end;
+      end if;
+   end Is_Direct_URL;
+
+   function Create_String ( Data : League.Strings.Universal_String ) return League.JSON.Values.JSON_Value is
+      Block : League.JSon.Objects.JSON_Object;
+   begin
+      Block.Insert (Pandoc.Type_String, League.JSON.Values.To_JSON_Value (+"Str"));
+      Block.Insert (Pandoc.Content_String, League.JSON.Values.To_JSON_Value (Data));
+
+      return Block.To_JSON_Value;
+   end Create_String;
+
    -------------------
    -- Traverse_Link --
    -------------------
@@ -218,20 +253,25 @@ procedure Aqs2mdx is
    is
       Copy : League.JSON.Objects.JSON_Object := Block;
       Args : League.JSON.Arrays.JSON_Array := Copy (+"c").To_Array;
-      Fix  : League.JSON.Arrays.JSON_Array := Args (3).To_Array;
-      Link : League.Strings.Universal_String := Fix (1).To_String;
+      Link  : League.JSON.Arrays.JSON_Array := Args (3).To_Array;
+      Target : League.Strings.Universal_String := Link (1).To_String;
+      Title : League.Strings.Universal_String := Link (2).To_String;
    begin
-      if Fix (2).To_String.To_Wide_Wide_String = "wikilink" then
-         if Link.Starts_With ("w:") then
-            Link := Wiki & Link.Tail_From (3);
-         else
-            Link := Wikibook & Link;
-         end if;
 
-         Fix.Replace (1, League.JSON.Values.To_JSON_Value (Link));
-         Fix.Replace (2, League.JSON.Values.To_JSON_Value (+""));
-         Args.Replace (3, Fix.To_JSON_Value);
-         Copy.Insert (+"c", Args.To_JSON_Value);
+      if Title = +"wikilink" then
+         if Is_Direct_URL (Args) then
+            return Create_String (Fix_Wikilink (Target));
+         else
+            Link.Replace (1, League.JSON.Values.To_JSON_Value (
+               Fix_Wikilink (Target)));
+            Link.Replace (2, League.JSON.Values.To_JSON_Value (+""));
+            Args.Replace (3, Link.To_JSON_Value);
+            Copy.Insert (Pandoc.Content_String, Args.To_JSON_Value);
+         end if;
+      else
+         if Is_Direct_URL (Args) then
+            return Create_String (Target);
+         end if;
       end if;
 
       return Copy.To_JSON_Value;
