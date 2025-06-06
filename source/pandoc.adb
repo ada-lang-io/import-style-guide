@@ -98,6 +98,9 @@ package body Pandoc is
    function Get_Type (B : League.JSON.Objects.JSON_Object)
      return Object_Type is (Type_Mapping (B (Type_String).To_String));
 
+   function To_String (T : Object_Type) return League.Strings.Universal_String
+     is (Obj_String_Representation (T));
+
 begin
 
    for Key in Object_Type loop
