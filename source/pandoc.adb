@@ -50,7 +50,7 @@ package body Pandoc is
       Block.Insert (
          Type_String,
          League.JSON.Values.To_JSON_Value (
-            Obj_String_Representation (Block_Div)
+            To_String (Block_Div)
          )
       );
 
@@ -80,7 +80,7 @@ package body Pandoc is
       Block.Insert (
          Type_String,
          League.JSON.Values.To_JSON_Value (
-            Obj_String_Representation (Block_Div)
+            To_String (Block_Div)
          )
       );
 
@@ -98,12 +98,15 @@ package body Pandoc is
    function Get_Type (B : League.JSON.Objects.JSON_Object)
      return Object_Type is (Type_Mapping (B (Type_String).To_String));
 
+   function To_String (T : Object_Type) return League.Strings.Universal_String
+     is (Obj_String_Representation (T));
+
 begin
 
    for Key in Object_Type loop
       declare
          Str_Rep : constant League.Strings.Universal_String :=
-           Obj_String_Representation (Key);
+           To_String (Key);
       begin
          Type_Mapping.Insert (Str_Rep, Key);
       end;
