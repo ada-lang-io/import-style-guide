@@ -1,8 +1,13 @@
 pragma Ada_2022;
 
 with League.JSON.Arrays;
+with League.String_Vectors;
 
 package body Pandoc is
+
+   function "+" (Left : Object_Type) return League.JSON.Values.JSON_Value is
+     (League.JSON.Values.To_JSON_Value
+        (Obj_String_Representation (Left)));
 
    function Attr
      (Key   : League.Strings.Universal_String;
@@ -47,12 +52,7 @@ package body Pandoc is
       Out_Content : League.JSON.Arrays.JSON_Array;
       Content_Block : League.JSON.Arrays.JSON_Array;
    begin
-      Block.Insert (
-         Type_String,
-         League.JSON.Values.To_JSON_Value (
-            Obj_String_Representation (Block_Div)
-         )
-      );
+      Block.Insert (Type_String, +Block_Div);
 
       for C in Content'Range loop
          Content_Block.Append (Content (C));
@@ -77,12 +77,7 @@ package body Pandoc is
       Block : League.JSON.Objects.JSON_Object;
       Out_Content : League.JSON.Arrays.JSON_Array;
    begin
-      Block.Insert (
-         Type_String,
-         League.JSON.Values.To_JSON_Value (
-            Obj_String_Representation (Block_Div)
-         )
-      );
+      Block.Insert (Type_String, +Block_Div);
 
       Out_Content.Append (Attr);
       Out_Content.Append (Content);
@@ -97,6 +92,57 @@ package body Pandoc is
 
    function Get_Type (B : League.JSON.Objects.JSON_Object)
      return Object_Type is (Type_Mapping (B (Type_String).To_String));
+
+   function Link
+     (Text, URL : League.Strings.Universal_String)
+      return League.JSON.Values.JSON_Value
+   is
+      Words  : constant League.String_Vectors.Universal_String_Vector :=
+        Text.Split (' ');
+      Block : League.JSON.Objects.JSON_Object;
+      Content : League.JSON.Arrays.JSON_Array;
+      Nil     : League.JSON.Arrays.JSON_Array;
+      List_1  : League.JSON.Arrays.JSON_Array;
+      List_2  : League.JSON.Arrays.JSON_Array;
+   begin
+      Block.Insert (Type_String, +Inline_Link);
+
+      Nil.Append
+        (League.JSON.Values.To_JSON_Value
+          (League.Strings.Empty_Universal_String));
+      Nil.Append (League.JSON.Arrays.Empty_JSON_Array.To_JSON_Value);
+      Nil.Append (League.JSON.Arrays.Empty_JSON_Array.To_JSON_Value);
+
+      for J in 1 .. Words.Length loop
+         declare
+            Object : League.JSON.Objects.JSON_Object;
+            Space  : League.JSON.Objects.JSON_Object;
+         begin
+            Object.Insert (Type_String, +Inline_String);
+            Object.Insert
+              (Content_String,
+               League.JSON.Values.To_JSON_Value (Words (J)));
+            List_1.Append (Object.To_JSON_Value);
+
+            if J /= Words.Length then
+               Space.Insert (Type_String, +Inline_Space);
+               List_1.Append (Space.To_JSON_Value);
+            end if;
+         end;
+      end loop;
+
+      List_2.Append (League.JSON.Values.To_JSON_Value (URL));
+      List_2.Append
+        (League.JSON.Values.To_JSON_Value
+          (League.Strings.Empty_Universal_String));
+
+      Content.Append (Nil.To_JSON_Value);
+      Content.Append (List_1.To_JSON_Value);
+      Content.Append (List_2.To_JSON_Value);
+      Block.Insert (Content_String, Content.To_JSON_Value);
+
+      return Block.To_JSON_Value;
+   end Link;
 
 begin
 

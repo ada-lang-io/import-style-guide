@@ -53,6 +53,10 @@ EOF
     INDEX=$((INDEX+1))
 done
 
+# Fix refs to ARM and avoid <> around URLs
+sed -i -e 's#../arm/AA#../../arm/AA#g' \
+  -e '/<http/s/[<>]//g' $OUTPUT/s*/*
+
 # Create front matter for the index page
 cat > /tmp/front_matter <<-EOF
 ---

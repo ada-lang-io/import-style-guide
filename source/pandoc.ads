@@ -75,6 +75,10 @@ package Pandoc is
       Content : League.JSON.Values.JSON_Value)
         return League.JSON.Values.JSON_Value;
 
+   function Link
+     (Text, URL : League.Strings.Universal_String)
+      return League.JSON.Values.JSON_Value;
+
    Type_String : constant League.Strings.Universal_String := +"t";
    Content_String : constant League.Strings.Universal_String := +"c";
 
